@@ -10,16 +10,17 @@ Agent skills for working with the [DeepSeek Harness](https://github.com/deepseek
 
 ## Install
 
-For Claude Code, copy a skill directory into `~/.claude/skills/`:
+From the [skills.sh](https://www.skills.sh/p/8TnjgYed7CfZZ9pQ) pack:
+
+```bash
+npx skills add https://skills.sh/p/8TnjgYed7CfZZ9pQ
+```
+
+Or copy a skill directory straight into an agent's own skills directory — for
+Claude Code that is `~/.claude/skills/`:
 
 ```bash
 cp -r skills/dsh-plugin ~/.claude/skills/
-```
-
-Or, once this repo is published as a [skills.sh](https://skills.sh) pack:
-
-```bash
-npx skills add https://skills.sh/p/<pack-id>
 ```
 
 ## Scaffolding a plugin
@@ -52,12 +53,14 @@ declares; copy goes through the harness's locale service rather than the
 browser's; and the install and release paths each have a gate that fails
 quietly. Each of those is cheap once you know it and expensive to rediscover.
 
-## Publishing to skills.sh
+## The skills.sh pack
 
-skills.sh builds a pack from a GitHub repository, including every valid
-`SKILL.md` it finds. Create the pack at skills.sh, point it at this repository,
-and share the resulting install command. Binary files and files over 2 MB are
-skipped, which is why everything here is plain text.
+This repository is published as the pack
+[`dsh-skills`](https://www.skills.sh/p/8TnjgYed7CfZZ9pQ). skills.sh builds a pack
+from a GitHub repository, including every valid `SKILL.md` it finds, so a second
+skill is a second directory under `skills/` rather than a separate artifact.
+Binary files and files over 2 MB are skipped, which is why everything here is
+plain text.
 
 ## License
 
