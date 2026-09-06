@@ -1,0 +1,5 @@
+# The layer a profile applies when it lists this bundle. Rows reference the
+# package by name so Node resolution finds the installed code.
+- insert:
+    - id: __PLUGIN_ID__
+      name: __PLUGIN_NAME__
