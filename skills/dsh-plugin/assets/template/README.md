@@ -32,13 +32,21 @@ npm run verify:pack     # publint + attw
 
 ## Release
 
-Create an npm **automation** token and add it as the repository secret
-`NPM_TOKEN`. Then:
+A pushed `v*` tag publishes over npm Trusted Publishing (OIDC) — no npm secrets.
+See [docs/publishing.md](docs/publishing.md) for the one-time GitHub and npm
+setup, then:
 
 ```bash
 npm run release:check
 npm version patch
-git push --follow-tags
+git push origin main --follow-tags
+```
+
+Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to the
+repository so the plugin is discoverable:
+
+```bash
+gh repo edit __PLUGIN_REPO__ --add-topic dsh-plugin --add-topic deepseek-harness --add-topic dsh
 ```
 
 ## License

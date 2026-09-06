@@ -39,6 +39,7 @@
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "README.md",
+    "docs/publishing.md",
     "CHANGELOG.md",
     "LICENSE"
   ],

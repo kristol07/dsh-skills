@@ -174,8 +174,13 @@ def main() -> None:
     print("  npm install && npm test")
     print(f"  dsh plugin --profile web add link:{target}")
     print("  dsh --profile web --dump-config")
+    print(
+        f"  gh repo edit {args.repo} --add-topic dsh-plugin"
+        " --add-topic deepseek-harness --add-topic dsh"
+    )
     if not args.author:
         print("note: set `author` in package.json before publishing")
+    print("note: docs/publishing.md has the one-time trusted-publishing setup")
 
 
 if __name__ == "__main__":

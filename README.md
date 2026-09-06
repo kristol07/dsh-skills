@@ -6,7 +6,7 @@ Agent skills for working with the [DeepSeek Harness](https://github.com/deepseek
 
 | Skill | What it covers |
 |---|---|
-| [`dsh-plugin`](skills/dsh-plugin/SKILL.md) | The full plugin lifecycle: the two-half package shape, host services and extension points, browser slots and the module-table rules, locale registration, profile bundles and patch layers, testing against the real harness machinery, and npm release with tag-triggered GitHub Actions. |
+| [`dsh-plugin`](skills/dsh-plugin/SKILL.md) | The full plugin lifecycle: the two-half package shape, host services and extension points, browser slots and the module-table rules, locale registration, profile bundles and patch layers, testing against the real harness machinery, and a tag-triggered npm release over Trusted Publishing (OIDC — no tokens). |
 
 ## Install
 
@@ -37,7 +37,10 @@ Add `--no-ui` for a host-only plugin (a tool or a hook); it drops the browser
 half, its dev dependencies, and the `dsh.client` declaration.
 
 Both variants build, pass their own contract tests, and pass `publint` and
-`@arethetypeswrong/cli` as generated.
+`@arethetypeswrong/cli` as generated. Each ships a `docs/publishing.md` with the
+one-time trusted-publishing setup, and the scaffold prints the `gh repo edit`
+command for the `dsh-plugin` topic the harness README asks plugin repositories to
+carry.
 
 ## Why these exist
 

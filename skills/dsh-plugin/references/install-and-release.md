@@ -103,61 +103,63 @@ Never combine routes — each inserts its own row, and you get duplicates.
 Publish on a pushed version tag: a merge to the default branch publishes
 nothing, and the tag is the confirmation gesture.
 
-```yaml
-name: Release
-on:
-  push:
-    tags: ['v*']
-permissions:
-  contents: write     # to create the GitHub release
-  id-token: write     # for npm provenance
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          registry-url: https://registry.npmjs.org
-      - run: npm ci
-      - name: Check the tag matches the manifest
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          manifest="$(node -p "require('./package.json').version")"
-          [ "$tag" = "$manifest" ] || { echo "::error::tag v$tag != manifest $manifest"; exit 1; }
-      - run: npm run release:check
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+Use **npm Trusted Publishing** rather than a token. GitHub Actions mints a
+short-lived credential over OIDC, so there is no npm password, `NPM_TOKEN`, or
+`NODE_AUTH_TOKEN` anywhere — the trust lives on the npm side and names the
+repository, the workflow **filename**, and a GitHub environment. Those three are
+part of the configuration, not free choices: renaming the workflow file breaks
+publishing.
+
+`assets/template/.github/workflows/publish.yml` is the whole thing. Its shape is
+two jobs, and the split is the point:
+
+1. **validate** — check the tag against `package.json` *and* `package-lock.json`,
+   check the commit is an ancestor of `main`, refuse a version already on the
+   registry (an npm version cannot be overwritten, so failing early beats failing
+   halfway through), run `release:check`, then `npm pack` and upload the tarball.
+2. **publish** — `permissions: id-token: write`, `environment: npm`, download the
+   artifact, and `npm publish <tarball>`. Publishing the tarball the tests ran
+   against removes the window where a rebuild could differ, and publishing a
+   tarball runs no lifecycle scripts at all.
+
+Route a prerelease to the `next` dist-tag so a beta cannot displace `latest`:
+
+```bash
+case "$version" in *-*) tag=next ;; *) tag=latest ;; esac
 ```
 
-The full workflow in `assets/template/.github/workflows/release.yml` adds a check
-that the version is not already on the registry — better than letting `npm
-publish` fail halfway through the job — and opens the GitHub release.
+### One-time setup, and the two things that bite
 
-One-time setup, and the only manual step: create an **automation** access token
-on npm and add it as the repository secret `NPM_TOKEN`. Automation tokens are the
-ones that bypass 2FA in CI; a classic publish token with 2FA-on-publish will not
-work unattended.
+**On GitHub.** Create the environment (`Settings → Environments`) with the name
+the workflow declares. Two traps:
 
-Then a release is:
+- Declaring `environment: npm` in YAML does **not** require approval. GitHub
+  silently creates an unprotected environment of that name. Add **Required
+  reviewers** if you want a human gate; leave **Prevent self-review** off, or a
+  sole maintainer cannot approve their own tag.
+- Under **Deployment branches and tags**, add a **Tag** rule `v*`. A
+  branches-only rule blocks every release, because the run comes from a tag.
+
+**On npm.** Package → Settings → Trusted publishing → Add trusted publisher →
+GitHub Actions, filling in the owner, repository, workflow filename, and
+environment name. Allow direct **`npm publish`** — a new configuration may
+default to staged publishing only.
+
+Trusted publishing attaches to an **existing** package, so the first release of
+a new name is published manually (`npm login && npm publish --access public`) and
+every release after that runs in CI.
+
+OIDC needs npm ≥ 11.5.1, so pin the workflow to Node 24.
+
+### Releasing
 
 ```bash
 npm run release:check
-npm version patch            # writes the manifest, commits, and tags in one step
-git push --follow-tags
+npm version patch            # writes the manifest and lockfile, commits, and tags
+git push origin main --follow-tags
 ```
 
-Because `npm version` does all three, the tag and the manifest cannot disagree —
-and the workflow re-checks anyway, since a hand-edit could split them.
-
-For a manual approval on top of the tag, add `environment: npm-publish` to the
-job and configure that environment's reviewers.
-
-If your npm account rejects provenance, drop `--provenance`. Provenance also
-requires the `repository.url` in the manifest to match the GitHub repository.
+Update `CHANGELOG.md` before tagging.
 
 ## CI
 
@@ -177,3 +179,17 @@ steps:
 
 `npm ci` runs `prepare`, which is also the closest local rehearsal of what a git
 install does to a consumer.
+
+## Repository topics
+
+The harness README asks plugin authors to add the
+[`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to their repository —
+that GitHub topic page is how people find dsh plugins. Set it when the repository
+is created, not at release time, since discovery is the point:
+
+```bash
+gh repo edit owner/repo --add-topic dsh-plugin --add-topic deepseek-harness --add-topic dsh
+```
+
+npm keywords (`deepseek-harness`, `dsh`, `dsh-plugin` in `package.json`) index a
+different catalogue. Set both.

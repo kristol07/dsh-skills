@@ -186,21 +186,38 @@ are specific to dsh plugins rather than to npm in general:
   `cjs-resolves-to-esm` — an ESM-only package is the intent.
 
 Release on a pushed tag, so a merge publishes nothing and the tag is the
-confirmation gesture. `assets/template/.github/workflows/` has both workflows;
-the release job checks the tag against the manifest, refuses an already-published
-version, runs the checks, publishes with provenance, and opens the GitHub
-release. The only manual setup is an npm **automation** token as the `NPM_TOKEN`
-repository secret — automation tokens are the ones that bypass 2FA in CI.
+confirmation gesture. Use **npm Trusted Publishing**, not a token: GitHub
+Actions mints a short-lived credential over OIDC, so there is no npm password or
+secret anywhere. `assets/template/.github/workflows/publish.yml` is ready to
+use — validate and pack in one job, publish that same tarball in a second, so
+what ships is the artifact the tests ran against.
 
 ```bash
 npm run release:check
-npm version patch && git push --follow-tags
+npm version patch && git push origin main --follow-tags
 ```
+
+The setup has three parts that must agree — the repository, the workflow
+**filename**, and the environment name — because npm's trust configuration names
+all three. Two traps worth knowing before a first tag: declaring
+`environment: npm` does not by itself require approval (GitHub silently creates
+an unprotected environment of that name), and the environment's deployment rule
+must allow **tags**, since the release never runs from a branch. Trusted
+publishing also attaches to an existing package, so a new name's first release
+is published manually.
 
 Keep the packaging checks out of `prepublishOnly`: `attw --pack` shells out to
 `npm pack`, which inherits `npm_config_dry_run` from `npm publish --dry-run` and
 then writes no tarball, so a `prepublishOnly` that runs them makes the publish
 rehearsal impossible.
+
+Finally, add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) GitHub
+topic — the harness README asks plugin authors to, and that topic page is how
+people find dsh plugins. It is a different index from npm keywords, so set both:
+
+```bash
+gh repo edit owner/repo --add-topic dsh-plugin --add-topic deepseek-harness --add-topic dsh
+```
 
 ## Reference files
 
